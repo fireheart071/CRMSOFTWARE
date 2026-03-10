@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
+import Navigation from "@/components/Navigation";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CRM App",
-  description: "Simple CRM for managing leads and sales",
+  title: "CRM Pro - Sales Management System",
+  description: "Professional CRM application for managing leads, sales pipeline, and commissions",
 };
 
 export default function RootLayout({
@@ -26,9 +27,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen`}
       >
-        <Providers>{children}</Providers>
+        <Providers>
+          <Navigation />
+          <main className="relative">
+            {children}
+          </main>
+        </Providers>
       </body>
     </html>
   );
