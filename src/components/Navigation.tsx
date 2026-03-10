@@ -50,13 +50,35 @@ export default function Navigation() {
   const { data: session, status } = useSession()
   const pathname = usePathname()
 
-  // Only show navigation if user is authenticated
+  // Show loading state while session is being determined
   if (status === 'loading') {
-    return null // Don't show anything while loading
+    return (
+      <nav className="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50 backdrop-blur-sm bg-white/95">
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <div className="w-10 h-10 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-xl flex items-center justify-center shadow-lg animate-pulse">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <div className="hidden sm:block ml-3">
+                <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  CRM Pro
+                </h1>
+                <p className="text-xs text-gray-500 -mt-1">Loading...</p>
+              </div>
+            </div>
+            <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+      </nav>
+    )
   }
 
+  // Don't show navigation if not authenticated
   if (!session) {
-    return null // Don't show navigation if not authenticated
+    return null
   }
 
   const handleSignOut = () => {
