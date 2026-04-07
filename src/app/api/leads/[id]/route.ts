@@ -6,6 +6,24 @@ function getUserIdFromRequest(request: NextRequest): string | null {
   return userId
 }
 
+async function ensureUserExists(userId: string) {
+  const existingUser = await prisma.user.findUnique({
+    where: { id: userId }
+  })
+
+  if (!existingUser) {
+    await prisma.user.create({
+      data: {
+        id: userId,
+        name: `User ${userId.slice(0, 6)}`,
+        email: `${userId}@local.crm`,
+        password: 'local-auth-placeholder',
+        role: 'SALES'
+      }
+    })
+  }
+}
+
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const userId = getUserIdFromRequest(request)
@@ -15,6 +33,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const { id } = await params
     const { stage, ...updateData } = await request.json()
+    if (updateData.assignedTo) {
+      await ensureUserExists(updateData.assignedTo)
+    }
 
     // First verify that the lead belongs to the authenticated user
     const existingLead = await prisma.lead.findFirst({
@@ -35,25 +56,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         stage: stage as any
       },
       include: {
-        assignedUser: true,
-        commission: true
+        assignedUser: true
       }
     })
-
-    // If moving to PAYMENT, calculate commission
-    if (stage === 'PAYMENT' && lead.dealValue && !lead.commission) {
-      const commissionRate = 0.04 // 4%
-      const earned = lead.dealValue * commissionRate
-
-      await prisma.commission.create({
-        data: {
-          leadId: lead.id,
-          amount: lead.dealValue,
-          rate: commissionRate,
-          earned
-        }
-      })
-    }
 
     return NextResponse.json(lead)
   } catch (error) {

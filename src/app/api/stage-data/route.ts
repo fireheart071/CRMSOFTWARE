@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { leadId, stage, data } = await request.json()
+    const { leadId, stage, data, stageDataId } = await request.json()
 
     if (!leadId || !stage || !data) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -31,24 +31,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Lead not found or access denied' }, { status: 404 })
     }
 
-    // Upsert the stage data (create if doesn't exist, update if exists)
-    const stageData = await prisma.stageData.upsert({
-      where: {
-        leadId_stage: {
-          leadId,
-          stage
+    let stageData
+
+    if (stageDataId) {
+      const existing = await prisma.stageData.findFirst({
+        where: {
+          id: stageDataId,
+          leadId
         }
-      },
-      update: {
-        data: JSON.stringify(data),
-        updatedAt: new Date()
-      },
-      create: {
-        leadId,
-        stage,
-        data: JSON.stringify(data)
+      })
+
+      if (!existing) {
+        return NextResponse.json({ error: 'Stage entry not found' }, { status: 404 })
       }
-    })
+
+      stageData = await prisma.stageData.update({
+        where: { id: stageDataId },
+        data: {
+          stage,
+          data: JSON.stringify(data),
+          updatedAt: new Date()
+        }
+      })
+    } else {
+      // Create a new stage entry to preserve full history/reference.
+      stageData = await prisma.stageData.create({
+        data: {
+          leadId,
+          stage,
+          data: JSON.stringify(data)
+        }
+      })
+    }
 
     // If this is CLOSE_DEAL stage and contractValue is provided, update the lead's dealValue
     if (stage === 'CLOSE_DEAL' && data.contractValue) {

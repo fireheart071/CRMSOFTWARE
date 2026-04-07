@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { X } from 'lucide-react'
+import { fetchWithAuth } from '@/lib/fetchWithAuth'
 
 interface Lead {
   id: string
@@ -16,7 +17,10 @@ interface StageDataModalProps {
   lead: Lead
   isOpen: boolean
   onClose: () => void
-  onSave: (leadId: string, data: any) => void
+  stage?: string
+  initialData?: Record<string, any>
+  stageDataId?: string
+  onSave: (leadId: string, payload: { stage: string; data: any; stageDataId?: string }) => Promise<boolean>
 }
 
 const stageFields = {
@@ -36,6 +40,15 @@ const stageFields = {
   PRESENT_SERVICE: [
     { key: 'presentationDate', label: 'Presentation Date', type: 'date' },
     { key: 'presentationMethod', label: 'Presentation Method', type: 'select', options: ['In-Person', 'Video Call', 'Phone', 'Email', 'Demo'] },
+    { key: 'clientNeedsSummary', label: 'Client Needs Summary', type: 'textarea' },
+    { key: 'requiredFeatures', label: 'Required Features', type: 'textarea' },
+    { key: 'mustHaveRequirements', label: 'Must-Have Requirements', type: 'textarea' },
+    { key: 'niceToHaveRequirements', label: 'Nice-to-Have Requirements', type: 'textarea' },
+    { key: 'technicalRequirements', label: 'Technical Requirements', type: 'textarea' },
+    { key: 'integrationRequirements', label: 'Integration Requirements', type: 'textarea' },
+    { key: 'timelineExpectation', label: 'Timeline Expectation', type: 'text' },
+    { key: 'budgetExpectation', label: 'Budget Expectation (GHS)', type: 'number' },
+    { key: 'successCriteria', label: 'Success Criteria', type: 'textarea' },
     { key: 'materialsUsed', label: 'Materials Used', type: 'text' },
     { key: 'clientInterest', label: 'Client Interest Level', type: 'select', options: ['Very High', 'High', 'Medium', 'Low', 'Very Low'] },
     { key: 'presentationNotes', label: 'Presentation Notes', type: 'textarea' },
@@ -76,24 +89,80 @@ const stageFields = {
   ]
 }
 
-export default function StageDataModal({ lead, isOpen, onClose, onSave }: StageDataModalProps) {
+export default function StageDataModal({ lead, isOpen, onClose, stage, initialData, stageDataId, onSave }: StageDataModalProps) {
   const [formData, setFormData] = useState<Record<string, any>>({})
+  const [isSaving, setIsSaving] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const activeStage = stage || lead.stage
+
+  const draftStorageKey = useMemo(
+    () => `stage-draft:${lead.id}:${activeStage}`,
+    [lead.id, activeStage]
+  )
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    let cancelled = false
+    const loadData = async () => {
+      setIsLoading(true)
+      try {
+        const response = await fetchWithAuth(`/api/stage-data?leadId=${lead.id}&stage=${activeStage}`)
+        const savedData = response.ok ? await response.json() : []
+        const latestSaved = savedData?.[0]?.data ?? {}
+
+        let draftData = {}
+        const rawDraft = localStorage.getItem(draftStorageKey)
+        if (rawDraft) {
+          draftData = JSON.parse(rawDraft)
+        }
+
+        if (!cancelled) {
+          // Draft takes precedence so users can continue unfinished edits.
+          setFormData({ ...latestSaved, ...(initialData || {}), ...draftData })
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setFormData({})
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    }
+
+    loadData()
+    return () => {
+      cancelled = true
+    }
+  }, [isOpen, lead.id, activeStage, draftStorageKey, initialData])
 
   if (!isOpen) return null
 
-  const currentFields = stageFields[lead.stage as keyof typeof stageFields] || []
+  const currentFields = stageFields[activeStage as keyof typeof stageFields] || []
 
   const handleInputChange = (key: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [key]: value
-    }))
+    setFormData(prev => {
+      const next = {
+        ...prev,
+        [key]: value
+      }
+      localStorage.setItem(draftStorageKey, JSON.stringify(next))
+      return next
+    })
   }
 
-  const handleSave = () => {
-    onSave(lead.id, formData)
-    onClose()
-    setFormData({})
+  const handleSave = async () => {
+    setIsSaving(true)
+    try {
+      const ok = await onSave(lead.id, { stage: activeStage, data: formData, stageDataId })
+      if (ok) {
+        localStorage.removeItem(draftStorageKey)
+        onClose()
+        setFormData({})
+      }
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const renderField = (field: any) => {
@@ -153,7 +222,7 @@ export default function StageDataModal({ lead, isOpen, onClose, onSave }: StageD
       <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-900">
-            Update {lead.clientName} - {lead.stage.replace('_', ' ').toLowerCase()}
+            Update {lead.clientName} - {activeStage.replace('_', ' ').toLowerCase()}
           </h2>
           <button
             onClick={onClose}
@@ -164,6 +233,9 @@ export default function StageDataModal({ lead, isOpen, onClose, onSave }: StageD
         </div>
 
         <div className="space-y-4">
+          {isLoading ? (
+            <p className="text-sm text-gray-500">Loading saved stage data...</p>
+          ) : null}
           {currentFields.map((field: any) => (
             <div key={field.key}>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -183,9 +255,10 @@ export default function StageDataModal({ lead, isOpen, onClose, onSave }: StageD
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            disabled={isSaving || isLoading}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-60"
           >
-            Save Changes
+            {isSaving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </div>

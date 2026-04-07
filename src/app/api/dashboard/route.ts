@@ -43,18 +43,6 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    const totalCommissionPaid = await prisma.commission.aggregate({
-      where: {
-        lead: {
-          createdBy: userId
-        },
-        status: 'PAID'
-      },
-      _sum: {
-        earned: true
-      }
-    })
-
     const pipelineData = await prisma.lead.groupBy({
       by: ['stage'],
       where: {
@@ -70,7 +58,6 @@ export async function GET(request: NextRequest) {
       leadsInProgress,
       dealsClosed,
       totalRevenue: totalRevenue._sum.dealValue || 0,
-      totalCommissionPaid: totalCommissionPaid._sum.earned || 0,
       pipelineData: pipelineData.map(item => ({
         stage: item.stage,
         count: item._count.id

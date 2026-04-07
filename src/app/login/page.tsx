@@ -2,7 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+
+const SUPER_USER_EMAIL = 'admin@crm.com'
+const SUPER_USER_PASSWORD = 'admin123'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -17,17 +19,25 @@ export default function LoginPage() {
     setError('')
 
     try {
+      if (!email || !password) {
+        setError('Please fill in all fields')
+        return
+      }
+
+      if (email.toLowerCase() !== SUPER_USER_EMAIL || password !== SUPER_USER_PASSWORD) {
+        setError('Invalid super user credentials')
+        return
+      }
+
       if (email && password) {
         const userData = {
-          id: Math.random().toString(36).substr(2, 9),
-          email,
-          name: email.split('@')[0],
-          role: 'SALES'
+          id: 'super-admin',
+          email: SUPER_USER_EMAIL,
+          name: 'Super Admin',
+          role: 'ADMIN'
         }
         localStorage.setItem('user', JSON.stringify(userData))
         router.push('/dashboard')
-      } else {
-        setError('Please fill in all fields')
       }
     } catch (err) {
       setError('Login failed')
@@ -86,20 +96,9 @@ export default function LoginPage() {
             {loading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">Or create a new account</span>
-          </div>
-        </div>
-        <Link href="/register">
-          <button className="w-full flex justify-center py-2 px-4 border border-indigo-300 text-sm font-medium rounded-lg text-indigo-600 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">
-            Sign up
-          </button>
-        </Link>
-        <p className="text-center text-sm text-gray-600 mt-4">Demo: Use any email and password to login</p>
+        <p className="text-center text-sm text-gray-600 mt-4">
+          Super User Only: admin@crm.com / admin123
+        </p>
       </div>
     </div>
   )

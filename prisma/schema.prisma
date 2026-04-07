@@ -38,7 +38,6 @@ model Lead {
   stage             String       @default("FIND_LEADS")
   dateCreated       DateTime     @default(now())
   activities        Activity[]
-  commission        Commission?
   stageData         StageData[]
   updatedAt         DateTime     @updatedAt
 }
@@ -52,17 +51,6 @@ model Activity {
   date        DateTime @default(now())
 }
 
-model Commission {
-  id       String  @id @default(cuid())
-  leadId   String  @unique
-  lead     Lead    @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  amount   Float
-  rate     Float
-  earned   Float
-  status   String  @default("PENDING")
-  createdAt DateTime @default(now())
-}
-
 model StageData {
   id        String   @id @default(cuid())
   leadId    String
@@ -71,6 +59,4 @@ model StageData {
   data      String   // JSON string containing stage-specific data
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@unique([leadId, stage])
 }

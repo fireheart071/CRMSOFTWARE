@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "CRM Pro - Sales Management System",
-  description: "Professional CRM application for managing leads, sales pipeline, and commissions",
+  description: "Professional CRM application for managing leads and sales pipeline",
 };
 
 export default function RootLayout({

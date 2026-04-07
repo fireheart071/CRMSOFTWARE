@@ -18,6 +18,19 @@ interface Lead {
   stage: string
 }
 
+interface StageDataEntry {
+  id: string
+  stage: string
+  data: Record<string, any>
+}
+
+interface StageEditContext {
+  lead: Lead
+  stage: string
+  stageDataId?: string
+  initialData?: Record<string, any>
+}
+
 const stages = [
   'FIND_LEADS',
   'CONTACT_CLIENT',
@@ -54,7 +67,7 @@ export default function PipelinePage() {
   const [loading, setLoading] = useState(true)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
+  const [stageEditContext, setStageEditContext] = useState<StageEditContext | null>(null)
   const [dataViewerOpen, setDataViewerOpen] = useState(false)
   const [dataViewerLead, setDataViewerLead] = useState<Lead | null>(null)
   const [leadsWithData, setLeadsWithData] = useState<Set<string>>(new Set())
@@ -168,9 +181,8 @@ export default function PipelinePage() {
       ))
 
       // Update on server
-      await fetch(`/api/leads/${activeId}`, {
+      await fetchWithAuth(`/api/leads/${activeId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ stage: newStage })
       })
     }
@@ -190,9 +202,8 @@ export default function PipelinePage() {
       ))
 
       // Update on server
-      await fetch(`/api/leads/${leadId}`, {
+      await fetchWithAuth(`/api/leads/${leadId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ stage: nextStage })
       })
     }
@@ -203,7 +214,10 @@ export default function PipelinePage() {
   }
 
   const handleEditLeadData = (lead: Lead) => {
-    setSelectedLead(lead)
+    setStageEditContext({
+      lead,
+      stage: lead.stage
+    })
     setModalOpen(true)
   }
 
@@ -212,14 +226,26 @@ export default function PipelinePage() {
     setDataViewerOpen(true)
   }
 
-  const handleSaveStageData = async (leadId: string, data: any) => {
+  const handleEditHistoryEntry = (lead: Lead, entry: StageDataEntry) => {
+    setDataViewerOpen(false)
+    setStageEditContext({
+      lead,
+      stage: entry.stage,
+      stageDataId: entry.id,
+      initialData: entry.data
+    })
+    setModalOpen(true)
+  }
+
+  const handleSaveStageData = async (leadId: string, payload: { stage: string; data: any; stageDataId?: string }) => {
     try {
       const response = await fetchWithAuth('/api/stage-data', {
         method: 'POST',
         body: JSON.stringify({
           leadId,
-          stage: selectedLead?.stage,
-          data
+          stage: payload.stage,
+          data: payload.data,
+          stageDataId: payload.stageDataId
         })
       })
 
@@ -228,19 +254,21 @@ export default function PipelinePage() {
         setLeadsWithData(prev => new Set([...prev, leadId]))
 
         // Special message for CLOSE_DEAL stage
-        if (selectedLead?.stage === 'CLOSE_DEAL' && data.contractValue) {
-          alert(`Stage data saved successfully! Deal amount updated to GHS ${Number(data.contractValue).toLocaleString()}`)
+        if (payload.stage === 'CLOSE_DEAL' && payload.data.contractValue) {
+          alert(`Stage data saved successfully! Deal amount updated to GHS ${Number(payload.data.contractValue).toLocaleString()}`)
           // Refresh the leads to show updated dealValue
           fetchLeads()
         } else {
           alert('Stage data saved successfully!')
         }
+        return true
       } else {
         throw new Error('Failed to save stage data')
       }
     } catch (error) {
       console.error('Error saving stage data:', error)
       alert('Error saving stage data. Please try again.')
+      return false
     }
   }
 
@@ -319,11 +347,17 @@ export default function PipelinePage() {
         </div>
       </div>
 
-      {selectedLead && (
+      {stageEditContext && (
         <StageDataModal
-          lead={selectedLead}
+          lead={stageEditContext.lead}
+          stage={stageEditContext.stage}
+          stageDataId={stageEditContext.stageDataId}
+          initialData={stageEditContext.initialData}
           isOpen={modalOpen}
-          onClose={() => setModalOpen(false)}
+          onClose={() => {
+            setModalOpen(false)
+            setStageEditContext(null)
+          }}
           onSave={handleSaveStageData}
         />
       )}
@@ -333,6 +367,7 @@ export default function PipelinePage() {
           lead={dataViewerLead}
           isOpen={dataViewerOpen}
           onClose={() => setDataViewerOpen(false)}
+          onEditEntry={handleEditHistoryEntry}
         />
       )}
     </div>

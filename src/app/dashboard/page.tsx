@@ -10,13 +10,23 @@ interface DashboardData {
   leadsInProgress: number
   dealsClosed: number
   totalRevenue: number
-  totalCommissionPaid: number
   pipelineData: { stage: string; count: number }[]
+}
+
+interface ReminderItem {
+  leadId: string
+  clientName: string
+  stage: string
+  fieldKey: string
+  fieldLabel: string
+  dueDate: string
+  status: 'OVERDUE' | 'TODAY' | 'UPCOMING'
 }
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
   const [data, setData] = useState<DashboardData | null>(null)
+  const [reminders, setReminders] = useState<ReminderItem[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -31,9 +41,16 @@ export default function Dashboard() {
   }, [])
 
   const fetchDashboardData = async () => {
-    const res = await fetchWithAuth('/api/dashboard')
-    const dashboardData = await res.json()
+    const [dashboardRes, remindersRes] = await Promise.all([
+      fetchWithAuth('/api/dashboard'),
+      fetchWithAuth('/api/reminders')
+    ])
+
+    const dashboardData = await dashboardRes.json()
+    const remindersData = remindersRes.ok ? await remindersRes.json() : []
+
     setData(dashboardData)
+    setReminders(remindersData)
     setLoading(false)
   }
 
@@ -51,6 +68,16 @@ export default function Dashboard() {
     stage: stageLabels[item.stage as keyof typeof stageLabels],
     count: item.count
   })) || []
+
+  const formatReminderDate = (date: string) => {
+    return new Date(date).toLocaleDateString()
+  }
+
+  const getReminderBadgeClass = (status: ReminderItem['status']) => {
+    if (status === 'OVERDUE') return 'bg-red-100 text-red-700'
+    if (status === 'TODAY') return 'bg-amber-100 text-amber-700'
+    return 'bg-blue-100 text-blue-700'
+  }
 
   if (loading) {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>
@@ -174,10 +201,32 @@ export default function Dashboard() {
                 <Link href="/leads" className="block w-full bg-green-600 text-white text-center py-2 px-4 rounded-md hover:bg-green-700">
                   Manage Leads
                 </Link>
-                <Link href="/commissions" className="block w-full bg-yellow-600 text-white text-center py-2 px-4 rounded-md hover:bg-yellow-700">
-                  View Commissions
-                </Link>
               </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h2 className="text-lg font-medium text-gray-900 mb-4">Reminders</h2>
+              {reminders.length === 0 ? (
+                <p className="text-sm text-gray-500">No pending reminders yet.</p>
+              ) : (
+                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+                  {reminders.slice(0, 10).map((reminder, index) => (
+                    <div key={`${reminder.leadId}-${reminder.fieldKey}-${reminder.dueDate}-${index}`} className="border border-gray-200 rounded-lg p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{reminder.clientName}</p>
+                          <p className="text-xs text-gray-600">{reminder.fieldLabel}</p>
+                          <p className="text-xs text-gray-500">{stageLabels[reminder.stage as keyof typeof stageLabels] || reminder.stage}</p>
+                        </div>
+                        <span className={`text-xs px-2 py-1 rounded-full ${getReminderBadgeClass(reminder.status)}`}>
+                          {reminder.status}
+                        </span>
+                      </div>
+                      <p className="text-sm mt-2 text-gray-700">Due: {formatReminderDate(reminder.dueDate)}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

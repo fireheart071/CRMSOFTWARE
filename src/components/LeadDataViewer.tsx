@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { X, Eye } from 'lucide-react'
+import { fetchWithAuth } from '@/lib/fetchWithAuth'
 
 interface Lead {
   id: string
@@ -25,6 +26,7 @@ interface LeadDataViewerProps {
   lead: Lead
   isOpen: boolean
   onClose: () => void
+  onEditEntry?: (lead: Lead, entry: StageData) => void
 }
 
 const stageLabels = {
@@ -47,7 +49,7 @@ const stageColors = {
   CLIENT_RETENTION: 'bg-indigo-100 border-indigo-300'
 }
 
-export default function LeadDataViewer({ lead, isOpen, onClose }: LeadDataViewerProps) {
+export default function LeadDataViewer({ lead, isOpen, onClose, onEditEntry }: LeadDataViewerProps) {
   const [stageData, setStageData] = useState<StageData[]>([])
   const [loading, setLoading] = useState(false)
 
@@ -60,7 +62,7 @@ export default function LeadDataViewer({ lead, isOpen, onClose }: LeadDataViewer
   const fetchStageData = async () => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/stage-data?leadId=${lead.id}`)
+      const response = await fetchWithAuth(`/api/stage-data?leadId=${lead.id}`)
       if (response.ok) {
         const data = await response.json()
         setStageData(data)
@@ -108,6 +110,15 @@ export default function LeadDataViewer({ lead, isOpen, onClose }: LeadDataViewer
       followUpDate: 'Follow-up Date',
       presentationDate: 'Presentation Date',
       presentationMethod: 'Presentation Method',
+      clientNeedsSummary: 'Client Needs Summary',
+      requiredFeatures: 'Required Features',
+      mustHaveRequirements: 'Must-Have Requirements',
+      niceToHaveRequirements: 'Nice-to-Have Requirements',
+      technicalRequirements: 'Technical Requirements',
+      integrationRequirements: 'Integration Requirements',
+      timelineExpectation: 'Timeline Expectation',
+      budgetExpectation: 'Budget Expectation',
+      successCriteria: 'Success Criteria',
       materialsUsed: 'Materials Used',
       clientInterest: 'Client Interest Level',
       presentationNotes: 'Presentation Notes',
@@ -140,17 +151,32 @@ export default function LeadDataViewer({ lead, isOpen, onClose }: LeadDataViewer
     return fieldLabelMap[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
   }
 
-  const renderStageData = (stageDataItem: StageData) => {
+  const renderStageData = (stageDataItem: StageData, index: number) => {
     const data = stageDataItem.data
     const stageName = stageLabels[stageDataItem.stage as keyof typeof stageLabels] || stageDataItem.stage
 
     return (
       <div key={stageDataItem.id} className={`p-4 rounded-lg border-2 mb-4 ${stageColors[stageDataItem.stage as keyof typeof stageColors]}`}>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold text-gray-800">{stageName}</h3>
-          <span className="text-sm text-gray-500">
-            Updated: {new Date(stageDataItem.updatedAt).toLocaleDateString()}
-          </span>
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-gray-800">{stageName}</h3>
+            <span className="inline-flex items-center rounded-full bg-white/90 px-2 py-1 text-xs font-semibold text-gray-700 border border-gray-300">
+              Entry #{index + 1}
+            </span>
+          </div>
+          <div className="flex flex-col items-end">
+            <span className="inline-flex items-center rounded-full bg-white/90 px-2 py-1 text-xs text-gray-700 border border-gray-300">
+              {new Date(stageDataItem.updatedAt).toLocaleString()}
+            </span>
+            {onEditEntry ? (
+              <button
+                onClick={() => onEditEntry(lead, stageDataItem)}
+                className="mt-2 text-xs px-2 py-1 rounded bg-white border border-gray-300 hover:bg-gray-50 text-gray-700"
+              >
+                Edit Entry
+              </button>
+            ) : null}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -227,7 +253,7 @@ export default function LeadDataViewer({ lead, isOpen, onClose }: LeadDataViewer
           </div>
         ) : (
           <div className="space-y-4">
-            {stageData.map(renderStageData)}
+            {stageData.map((item, idx) => renderStageData(item, idx))}
           </div>
         )}
 

@@ -7,6 +7,24 @@ function getUserIdFromRequest(request: NextRequest): string | null {
   return userId
 }
 
+async function ensureUserExists(userId: string) {
+  const existingUser = await prisma.user.findUnique({
+    where: { id: userId }
+  })
+
+  if (!existingUser) {
+    await prisma.user.create({
+      data: {
+        id: userId,
+        name: `User ${userId.slice(0, 6)}`,
+        email: `${userId}@local.crm`,
+        password: 'local-auth-placeholder',
+        role: 'SALES'
+      }
+    })
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const userId = getUserIdFromRequest(request)
@@ -19,8 +37,7 @@ export async function GET(request: NextRequest) {
         createdBy: userId
       },
       include: {
-        assignedUser: true,
-        commission: true
+        assignedUser: true
       }
     })
 
@@ -38,6 +55,10 @@ export async function POST(request: NextRequest) {
     }
 
     const { clientName, companyName, phone, email, serviceInterested, dealValue, notes, assignedTo } = await request.json()
+    const assignedUserId = assignedTo || userId
+
+    await ensureUserExists(userId)
+    await ensureUserExists(assignedUserId)
 
     const lead = await prisma.lead.create({
       data: {
@@ -48,7 +69,7 @@ export async function POST(request: NextRequest) {
         serviceInterested,
         dealValue: dealValue ? parseFloat(dealValue) : null,
         notes,
-        assignedTo: assignedTo || userId,
+        assignedTo: assignedUserId,
         createdBy: userId,
         stage: 'FIND_LEADS'
       },
