@@ -99,6 +99,8 @@ export default function PipelinePage() {
   const [isExportingByUser, setIsExportingByUser] = useState(false)
   const [isExportingSelected, setIsExportingSelected] = useState(false)
   const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set())
+  const [issuingInvoiceLeadId, setIssuingInvoiceLeadId] = useState<string | null>(null)
+  const [downloadingInvoiceLeadId, setDownloadingInvoiceLeadId] = useState<string | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -417,6 +419,58 @@ export default function PipelinePage() {
     }
   }
 
+  const handleIssueInvoice = async (leadId: string) => {
+    setIssuingInvoiceLeadId(leadId)
+    try {
+      const response = await fetchWithAuth('/api/invoices/issue', {
+        method: 'POST',
+        body: JSON.stringify({ leadId })
+      })
+
+      const payload = await response.json()
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Failed to issue invoice')
+      }
+
+      alert(`Invoice issued successfully and sent to ${payload.clientEmail}.`)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to issue invoice'
+      alert(message)
+    } finally {
+      setIssuingInvoiceLeadId(null)
+    }
+  }
+
+  const handleDownloadInvoice = async (leadId: string) => {
+    setDownloadingInvoiceLeadId(leadId)
+    try {
+      const response = await fetchWithAuth(`/api/invoices/download?leadId=${encodeURIComponent(leadId)}`)
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}))
+        throw new Error(payload?.error || 'Failed to download invoice')
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      const contentDisposition = response.headers.get('Content-Disposition') || ''
+      const filenameMatch = contentDisposition.match(/filename="(.+)"/)
+      const filename = filenameMatch?.[1] || 'invoice.doc'
+
+      link.href = url
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to download invoice'
+      alert(message)
+    } finally {
+      setDownloadingInvoiceLeadId(null)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -506,6 +560,10 @@ export default function PipelinePage() {
                               onMoveToNext={moveToNextStage}
                               onEditData={handleEditLeadData}
                               onViewData={handleViewLeadData}
+                              onIssueInvoice={handleIssueInvoice}
+                              isIssuingInvoice={issuingInvoiceLeadId === lead.id}
+                              onDownloadInvoice={handleDownloadInvoice}
+                              isDownloadingInvoice={downloadingInvoiceLeadId === lead.id}
                               hasStageData={leadsWithData.has(lead.id)}
                               isSelected={selectedLeadIds.has(lead.id)}
                               onToggleSelect={toggleLeadSelection}

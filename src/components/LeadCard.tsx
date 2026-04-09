@@ -17,6 +17,10 @@ interface LeadCardProps {
   onMoveToNext?: (leadId: string) => void
   onEditData?: (lead: Lead) => void
   onViewData?: (lead: Lead) => void
+  onIssueInvoice?: (leadId: string) => void
+  isIssuingInvoice?: boolean
+  onDownloadInvoice?: (leadId: string) => void
+  isDownloadingInvoice?: boolean
   hasStageData?: boolean
   isSelected?: boolean
   onToggleSelect?: (leadId: string) => void
@@ -37,6 +41,10 @@ export default function LeadCard({
   onMoveToNext,
   onEditData,
   onViewData,
+  onIssueInvoice,
+  isIssuingInvoice,
+  onDownloadInvoice,
+  isDownloadingInvoice,
   hasStageData,
   isSelected,
   onToggleSelect
@@ -139,6 +147,38 @@ export default function LeadCard({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
               View
+            </button>
+          )}
+          {lead.stage === 'PAYMENT' && onIssueInvoice && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onIssueInvoice(lead.id)
+              }}
+              disabled={isIssuingInvoice}
+              className="text-xs bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-600 hover:to-violet-700 disabled:opacity-60 text-white px-2 py-1 rounded-lg transition-all duration-200 flex items-center gap-1 shadow-sm hover:shadow-md transform hover:scale-105"
+              title="Issue invoice and send to client email"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6M7 3h8l4 4v14H7V3z" />
+              </svg>
+              {isIssuingInvoice ? 'Issuing...' : 'Issue Invoice'}
+            </button>
+          )}
+          {lead.stage === 'PAYMENT' && onDownloadInvoice && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onDownloadInvoice(lead.id)
+              }}
+              disabled={isDownloadingInvoice}
+              className="text-xs bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 disabled:opacity-60 text-white px-2 py-1 rounded-lg transition-all duration-200 flex items-center gap-1 shadow-sm hover:shadow-md transform hover:scale-105"
+              title="Download invoice document"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v10m0 0l-4-4m4 4l4-4M4 20h16" />
+              </svg>
+              {isDownloadingInvoice ? 'Downloading...' : 'Download Invoice'}
             </button>
           )}
         </div>

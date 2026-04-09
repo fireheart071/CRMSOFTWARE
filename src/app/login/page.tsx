@@ -33,7 +33,7 @@ export default function LoginPage() {
         const userData = {
           id: 'super-admin',
           email: SUPER_USER_EMAIL,
-          name: 'Super Admin',
+          name: 'SkyTech',
           role: 'ADMIN'
         }
         localStorage.setItem('user', JSON.stringify(userData))

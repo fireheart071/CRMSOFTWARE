@@ -157,7 +157,7 @@ export default function Navigation() {
                   </span>
                 </div>
                 <div className="hidden sm:block text-left">
-                  <div className="text-sm font-medium text-gray-900">{user?.name || 'Super Admin'}</div>
+                  <div className="text-sm font-medium text-gray-900">{user?.name || 'SkyTech'}</div>
                   <div className="text-xs text-gray-500">{user?.role || 'ADMIN'}</div>
                 </div>
                 <svg
@@ -173,7 +173,7 @@ export default function Navigation() {
               {userMenuOpen && (
                 <div className="absolute right-0 mt-2 w-56 bg-white text-gray-900 rounded-xl shadow-xl border border-gray-200 py-2 z-50">
                   <div className="px-4 py-3 border-b border-gray-200">
-                    <div className="text-sm font-medium text-gray-900">{user?.name || 'Super Admin'}</div>
+                    <div className="text-sm font-medium text-gray-900">{user?.name || 'SkyTech'}</div>
                     <div className="text-sm text-gray-500">{user?.email || 'admin@crm.com'}</div>
                     <div className="text-xs text-indigo-600 font-medium mt-1">{user?.role || 'ADMIN'}</div>
                   </div>
