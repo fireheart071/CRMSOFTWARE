@@ -57,7 +57,8 @@ export async function GET(request: NextRequest) {
         lead: {
           select: {
             id: true,
-            clientName: true
+            clientName: true,
+            stage: true
           }
         }
       },
