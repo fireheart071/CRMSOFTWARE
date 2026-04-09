@@ -15,7 +15,7 @@ export default function UsersList({ initialUsers }: { initialUsers: any[] }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'ADMIN' })
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'SALES' })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -66,7 +66,7 @@ export default function UsersList({ initialUsers }: { initialUsers: any[] }) {
   const closeModal = () => {
     setIsModalOpen(false)
     setEditingUser(null)
-    setFormData({ name: '', email: '', password: '', role: 'ADMIN' })
+    setFormData({ name: '', email: '', password: '', role: 'SALES' })
   }
 
   const handleDelete = async (id: string, name: string) => {
@@ -185,7 +185,7 @@ export default function UsersList({ initialUsers }: { initialUsers: any[] }) {
                 <input
                   type="text"
                   required
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-gray-50/50"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-gray-50/50 text-gray-900"
                   placeholder="John Doe"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -196,7 +196,7 @@ export default function UsersList({ initialUsers }: { initialUsers: any[] }) {
                 <input
                   type="email"
                   required
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-gray-50/50"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-gray-50/50 text-gray-900"
                   placeholder="john@example.com"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -209,7 +209,7 @@ export default function UsersList({ initialUsers }: { initialUsers: any[] }) {
                 <input
                   type="password"
                   required={!editingUser}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-gray-50/50"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-gray-50/50 text-gray-900"
                   placeholder="********"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -218,10 +218,11 @@ export default function UsersList({ initialUsers }: { initialUsers: any[] }) {
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">System Role</label>
                 <select
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-gray-50/50"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-gray-50/50 text-gray-900"
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                 >
+                  <option value="SALES">Sales Representative</option>
                   <option value="ADMIN">Administrator</option>
                 </select>
               </div>
