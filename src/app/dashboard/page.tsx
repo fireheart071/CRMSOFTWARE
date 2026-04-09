@@ -85,12 +85,17 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-
       <div className="max-w-full mx-auto py-6 sm:px-6 lg:px-8 2xl:px-12">
         <div className="px-4 py-6 sm:px-0">
+          <div className="mb-6">
+            <p className="text-sm font-medium text-indigo-600">Overview</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Welcome back, {user?.name || 'User'}</h1>
+            <p className="text-sm text-gray-500 mt-1">Track your pipeline progress, revenue, and upcoming follow-ups.</p>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 mb-6">
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
+            <div className="bg-white overflow-hidden shadow-sm border border-gray-100 rounded-xl">
+              <div className="p-5 bg-gradient-to-r from-blue-50 to-white">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
@@ -111,8 +116,8 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
+            <div className="bg-white overflow-hidden shadow-sm border border-gray-100 rounded-xl">
+              <div className="p-5 bg-gradient-to-r from-amber-50 to-white">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
@@ -133,8 +138,8 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
+            <div className="bg-white overflow-hidden shadow-sm border border-gray-100 rounded-xl">
+              <div className="p-5 bg-gradient-to-r from-green-50 to-white">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
@@ -155,8 +160,8 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
+            <div className="bg-white overflow-hidden shadow-sm border border-gray-100 rounded-xl">
+              <div className="p-5 bg-gradient-to-r from-purple-50 to-white">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
@@ -179,7 +184,7 @@ export default function Dashboard() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
-            <div className="bg-white p-6 rounded-lg shadow">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
               <h2 className="text-lg font-medium text-gray-900 mb-4">Pipeline Distribution</h2>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={chartData}>
@@ -192,26 +197,28 @@ export default function Dashboard() {
               </ResponsiveContainer>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
               <h2 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h2>
               <div className="space-y-4">
-                <Link href="/pipeline" className="block w-full bg-indigo-600 text-white text-center py-2 px-4 rounded-md hover:bg-indigo-700">
+                <Link href="/pipeline" className="block w-full bg-indigo-600 text-white text-center py-2.5 px-4 rounded-lg hover:bg-indigo-700 transition-colors font-medium">
                   View Pipeline
                 </Link>
-                <Link href="/leads" className="block w-full bg-green-600 text-white text-center py-2 px-4 rounded-md hover:bg-green-700">
+                <Link href="/leads" className="block w-full bg-emerald-600 text-white text-center py-2.5 px-4 rounded-lg hover:bg-emerald-700 transition-colors font-medium">
                   Manage Leads
                 </Link>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
               <h2 className="text-lg font-medium text-gray-900 mb-4">Reminders</h2>
               {reminders.length === 0 ? (
-                <p className="text-sm text-gray-500">No pending reminders yet.</p>
+                <div className="text-sm text-gray-500 border border-dashed border-gray-200 rounded-lg p-4 bg-gray-50">
+                  No pending reminders yet.
+                </div>
               ) : (
                 <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
                   {reminders.slice(0, 10).map((reminder, index) => (
-                    <div key={`${reminder.leadId}-${reminder.fieldKey}-${reminder.dueDate}-${index}`} className="border border-gray-200 rounded-lg p-3">
+                    <div key={`${reminder.leadId}-${reminder.fieldKey}-${reminder.dueDate}-${index}`} className="border border-gray-200 rounded-lg p-3 bg-gradient-to-r from-white to-gray-50">
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <p className="text-sm font-medium text-gray-900">{reminder.clientName}</p>

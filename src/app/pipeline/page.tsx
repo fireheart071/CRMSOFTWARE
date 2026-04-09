@@ -285,12 +285,15 @@ export default function PipelinePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-
       <div className="max-w-full mx-auto py-6 sm:px-6 lg:px-8 2xl:px-12">
         <div className="px-4 py-6 sm:px-0">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Sales Pipeline</h1>
-            <div className="text-sm text-gray-600">
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-4 mb-6">
+            <div>
+              <p className="text-sm font-medium text-indigo-600">Opportunity Tracking</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Sales Pipeline</h1>
+              <p className="text-sm text-gray-500 mt-1">Drag cards between stages or use the Next button to progress deals.</p>
+            </div>
+            <div className="text-sm text-gray-600 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm">
               Total Leads: {leads.length}
             </div>
           </div>

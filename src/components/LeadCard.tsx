@@ -76,7 +76,7 @@ export default function LeadCard({ lead, onMoveToNext, onEditData, onViewData, h
       {/* Header with name and badges */}
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1 flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+          <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold shadow-sm">
             {lead.clientName.charAt(0).toUpperCase()}
           </div>
           <h3 className="font-semibold text-gray-900 text-sm truncate">{lead.clientName}</h3>
@@ -138,7 +138,7 @@ export default function LeadCard({ lead, onMoveToNext, onEditData, onViewData, h
 
       {/* Stage and Assignment */}
       <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+        <span className={`text-xs px-2 py-1 rounded-full font-medium capitalize ${
           lead.stage === 'FIND_LEADS' ? 'bg-blue-100 text-blue-700' :
           lead.stage === 'CONTACT_CLIENT' ? 'bg-yellow-100 text-yellow-700' :
           lead.stage === 'PRESENT_SERVICE' ? 'bg-purple-100 text-purple-700' :
@@ -147,7 +147,7 @@ export default function LeadCard({ lead, onMoveToNext, onEditData, onViewData, h
           lead.stage === 'PAYMENT' ? 'bg-emerald-100 text-emerald-700' :
           'bg-indigo-100 text-indigo-700'
         }`}>
-          {lead.stage.replace('_', ' ').toLowerCase()}
+          {lead.stage.replace(/_/g, ' ').toLowerCase()}
         </span>
         <div className="flex items-center text-xs text-gray-500">
           <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
