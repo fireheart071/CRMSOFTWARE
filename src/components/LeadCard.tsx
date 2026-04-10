@@ -24,6 +24,7 @@ interface LeadCardProps {
   hasStageData?: boolean
   isSelected?: boolean
   onToggleSelect?: (leadId: string) => void
+  isDraggable?: boolean
 }
 
 const stages = [
@@ -47,7 +48,8 @@ export default function LeadCard({
   isDownloadingInvoice,
   hasStageData,
   isSelected,
-  onToggleSelect
+  onToggleSelect,
+  isDraggable = true
 }: LeadCardProps) {
   const {
     attributes,
@@ -56,7 +58,7 @@ export default function LeadCard({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: lead.id })
+  } = useSortable({ id: lead.id, disabled: !isDraggable })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -86,9 +88,9 @@ export default function LeadCard({
       style={style}
       {...attributes}
       {...listeners}
-      className={`bg-white p-4 rounded-xl shadow-sm border border-gray-200 cursor-move hover:shadow-lg hover:border-indigo-300 transition-all duration-200 transform hover:-translate-y-1 ${
-        isDragging ? 'opacity-50 rotate-2 scale-105' : ''
-      }`}
+      className={`bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-indigo-300 transition-all duration-200 transform hover:-translate-y-1 ${isDraggable ? 'cursor-move' : 'cursor-default'
+        } ${isDragging ? 'opacity-50 rotate-2 scale-105' : ''
+        }`}
       onClick={handleCardClick}
     >
       {/* Header with name and badges */}
@@ -202,15 +204,14 @@ export default function LeadCard({
 
       {/* Stage and Assignment */}
       <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-100">
-        <span className={`text-xs px-2 py-1 rounded-full font-medium capitalize ${
-          lead.stage === 'FIND_LEADS' ? 'bg-blue-100 text-blue-700' :
-          lead.stage === 'CONTACT_CLIENT' ? 'bg-yellow-100 text-yellow-700' :
-          lead.stage === 'PRESENT_SERVICE' ? 'bg-purple-100 text-purple-700' :
-          lead.stage === 'NEGOTIATE' ? 'bg-orange-100 text-orange-700' :
-          lead.stage === 'CLOSE_DEAL' ? 'bg-green-100 text-green-700' :
-          lead.stage === 'PAYMENT' ? 'bg-emerald-100 text-emerald-700' :
-          'bg-indigo-100 text-indigo-700'
-        }`}>
+        <span className={`text-xs px-2 py-1 rounded-full font-medium capitalize ${lead.stage === 'FIND_LEADS' ? 'bg-blue-100 text-blue-700' :
+            lead.stage === 'CONTACT_CLIENT' ? 'bg-yellow-100 text-yellow-700' :
+              lead.stage === 'PRESENT_SERVICE' ? 'bg-purple-100 text-purple-700' :
+                lead.stage === 'NEGOTIATE' ? 'bg-orange-100 text-orange-700' :
+                  lead.stage === 'CLOSE_DEAL' ? 'bg-green-100 text-green-700' :
+                    lead.stage === 'PAYMENT' ? 'bg-emerald-100 text-emerald-700' :
+                      'bg-indigo-100 text-indigo-700'
+          }`}>
           {lead.stage.replace(/_/g, ' ').toLowerCase()}
         </span>
         <div className="flex items-center text-xs text-gray-500">

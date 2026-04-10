@@ -19,6 +19,25 @@ interface LeadListProps {
 }
 
 export default function LeadList({ leads, onLeadUpdated }: LeadListProps) {
+  const handleDelete = async (leadId: string) => {
+    if (!confirm('Are you sure you want to delete this lead?')) return;
+    try {
+      const res = await fetch(`/api/leads/${leadId}`, {
+        method: 'DELETE',
+        headers: {
+          'X-User-Id': JSON.parse(localStorage.getItem('user') || '{}')?.id,
+        }
+      });
+      if (res.ok) {
+        onLeadUpdated();
+      } else {
+        alert('Failed to delete lead');
+      }
+    } catch (e) {
+      alert('Error deleting lead');
+    }
+  };
+
   const stageLabels = {
     FIND_LEADS: 'Find Leads',
     CONTACT_CLIENT: 'Contact Client',
@@ -73,6 +92,12 @@ export default function LeadList({ leads, onLeadUpdated }: LeadListProps) {
                   >
                     View
                   </Link>
+                  <button
+                    onClick={() => handleDelete(lead.id)}
+                    className="text-red-600 hover:text-red-900 text-sm font-semibold ml-2"
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             </div>

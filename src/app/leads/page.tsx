@@ -16,7 +16,12 @@ export default function LeadsPage() {
   useEffect(() => {
     const storedUser = localStorage.getItem('user')
     if (storedUser) {
-      setUser(JSON.parse(storedUser))
+      const parsedUser = JSON.parse(storedUser)
+      if (parsedUser.role !== 'ADMIN') {
+        router.replace('/pipeline')
+        return
+      }
+      setUser(parsedUser)
       fetchLeads()
     } else {
       router.replace('/login')
@@ -24,9 +29,17 @@ export default function LeadsPage() {
   }, [router])
 
   const fetchLeads = async () => {
-    const res = await fetchWithAuth('/api/leads')
-    const data = await res.json()
-    setLeads(data)
+    try {
+      const res = await fetchWithAuth('/api/leads')
+      const data = await res.json()
+      if (res.ok && Array.isArray(data)) {
+        setLeads(data)
+      } else {
+        setLeads([])
+      }
+    } catch (e) {
+      setLeads([])
+    }
   }
 
   const handleLeadAdded = () => {

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-import { signIn } from 'next-auth/react'
+import { signIn, getSession } from 'next-auth/react'
 
 const SUPER_USER_EMAIL = 'admin@crm.com'
 
@@ -32,15 +32,25 @@ export default function LoginPage() {
       }
 
       // Keep localStorage for backward compatibility with some components
-      const userData = {
-        name: email === SUPER_USER_EMAIL ? 'SkyTech' : 'Team Member',
-        email,
-        role: email === SUPER_USER_EMAIL ? 'ADMIN' : 'SALES'
+      const session = await getSession()
+      if (session?.user) {
+        localStorage.setItem('user', JSON.stringify({
+          id: session.user.id,
+          name: session.user.name,
+          email: session.user.email,
+          role: session.user.role
+        }))
+      } else {
+        const userData = {
+          id: 'admin_fallback_id',
+          name: email === SUPER_USER_EMAIL ? 'SkyTech' : 'Team Member',
+          email,
+          role: email === SUPER_USER_EMAIL ? 'ADMIN' : 'SALES'
+        }
+        localStorage.setItem('user', JSON.stringify(userData))
       }
-      localStorage.setItem('user', JSON.stringify(userData))
-      
-      router.push('/dashboard')
-      router.refresh() // Refresh to update server components with new session
+      // Force a full browser reload so layout components (like Navigation) remount and re-read localStorage
+      window.location.href = session?.user?.role === 'ADMIN' ? '/dashboard' : '/pipeline'
     } catch (err) {
       setError('An unexpected error occurred')
     } finally {

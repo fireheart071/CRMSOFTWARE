@@ -32,11 +32,13 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
+        const userRole = user.email === 'admin@crm.com' ? 'ADMIN' : user.role
+
         return {
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.role
+          role: userRole
         }
       }
     })

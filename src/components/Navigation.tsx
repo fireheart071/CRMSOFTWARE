@@ -88,9 +88,18 @@ export default function Navigation() {
     return null
   }
 
-  const handleSignOut = () => {
+  // Filter navigation items based on role
+  const isAdmin = user?.role === 'ADMIN'
+  const visibleNavigation = navigation.filter(item => {
+    if (!isAdmin) {
+      return item.href === '/pipeline'
+    }
+    return true
+  })
+
+  const handleSignOut = async () => {
     localStorage.removeItem('user')
-    router.push('/login')
+    window.location.href = '/login'
   }
 
   const handleNavigate = (href: string) => {
@@ -122,7 +131,7 @@ export default function Navigation() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
-            {navigation.map((item) => {
+            {visibleNavigation.map((item) => {
               const isActive = pathname === item.href
               return (
                 <Link
@@ -197,15 +206,17 @@ export default function Navigation() {
                     <div className="text-xs text-indigo-600 font-medium mt-1">{user?.role || 'ADMIN'}</div>
                   </div>
                   <div className="py-1">
-                    <button
-                      onClick={() => handleNavigate('/dashboard')}
-                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                    >
-                      <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18" />
-                      </svg>
-                      Go to Dashboard
-                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => handleNavigate('/dashboard')}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                      >
+                        <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18" />
+                        </svg>
+                        Go to Dashboard
+                      </button>
+                    )}
                     <button
                       onClick={() => handleNavigate('/pipeline')}
                       className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
@@ -215,15 +226,17 @@ export default function Navigation() {
                       </svg>
                       Go to Pipeline
                     </button>
-                    <button
-                      onClick={() => handleNavigate('/leads')}
-                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                    >
-                      <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                      Go to Leads
-                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => handleNavigate('/leads')}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                      >
+                        <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        Go to Leads
+                      </button>
+                    )}
                   </div>
                   <div className="border-t border-gray-200 pt-1">
                     <button
@@ -270,7 +283,7 @@ export default function Navigation() {
       {mobileMenuOpen && (
         <div className="md:hidden bg-white text-gray-900 border-t border-gray-200 shadow-lg">
           <div className="px-2 pt-2 pb-3 space-y-1">
-            {navigation.map((item) => {
+            {visibleNavigation.map((item) => {
               const isActive = pathname === item.href
               return (
                 <Link
