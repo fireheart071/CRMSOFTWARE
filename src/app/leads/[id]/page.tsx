@@ -47,7 +47,13 @@ export default function LeadDetailPage() {
       return
     }
 
-    setUser(JSON.parse(storedUser))
+    const parsedUser = JSON.parse(storedUser)
+    if (parsedUser.role !== 'ADMIN') {
+      router.replace('/pipeline')
+      return
+    }
+
+    setUser(parsedUser)
     if (params.id) {
       fetchLead()
       fetchActivities()
@@ -123,9 +129,31 @@ export default function LeadDetailPage() {
 
       <div className="max-w-full mx-auto py-6 sm:px-6 lg:px-8 2xl:px-12">
         <div className="px-4 py-6 sm:px-0">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">{lead.clientName}</h1>
-            <p className="text-gray-600">{lead.companyName}</p>
+          <div className="mb-6 flex justify-between items-start">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">{lead.clientName}</h1>
+              <p className="text-gray-600">{lead.companyName}</p>
+            </div>
+            <div className="flex space-x-3">
+              <Link
+                href={`/leads/${lead.id}/edit`}
+                className="bg-white hover:bg-gray-50 text-indigo-600 border border-indigo-600 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                Edit
+              </Link>
+              <button
+                onClick={async () => {
+                  if (confirm('Are you sure you want to delete this lead?')) {
+                    const res = await fetchWithAuth(`/api/leads/${lead.id}`, { method: 'DELETE' });
+                    if (res.ok) router.push('/leads');
+                    else alert('Failed to delete lead');
+                  }
+                }}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                Delete
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">

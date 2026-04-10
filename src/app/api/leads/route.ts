@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 // Helper function to get user ID from request headers
 function getUserIdFromRequest(request: NextRequest): string | null {
   const userId = request.headers.get('X-User-Id')
+  if (!userId || userId === 'undefined' || userId === 'null') return null
   return userId
 }
 
@@ -32,9 +33,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    await ensureUserExists(userId)
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 401 })
+    }
+
     const leads = await prisma.lead.findMany({
-      where: {
-        createdBy: userId
+      where: user.role === 'ADMIN' ? undefined : {
+        OR: [
+          { createdBy: userId },
+          { assignedTo: userId }
+        ]
       },
       include: {
         assignedUser: true

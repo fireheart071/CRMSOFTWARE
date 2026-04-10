@@ -90,6 +90,7 @@ export default function PipelinePage() {
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [activeStage, setActiveStage] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [stageEditContext, setStageEditContext] = useState<StageEditContext | null>(null)
   const [dataViewerOpen, setDataViewerOpen] = useState(false)
@@ -122,31 +123,60 @@ export default function PipelinePage() {
   }, [router])
 
   const fetchLeads = async () => {
-    const res = await fetchWithAuth('/api/leads')
-    const data = await res.json()
-    setLeads(data)
-
-    // Fetch stage data for all leads to determine which ones have data
-    const leadsWithStageData = new Set<string>()
-    for (const lead of data) {
-      try {
-        const stageDataRes = await fetchWithAuth(`/api/stage-data?leadId=${lead.id}`)
-        if (stageDataRes.ok) {
-          const stageData = await stageDataRes.json()
-          if (stageData.length > 0) {
-            leadsWithStageData.add(lead.id)
-          }
-        }
-      } catch (error) {
-        console.error(`Error fetching stage data for lead ${lead.id}:`, error)
+    try {
+      const res = await fetchWithAuth('/api/leads')
+      const data = await res.json()
+      
+      if (!res.ok || !Array.isArray(data)) {
+        console.error('Failed to fetch leads:', data)
+        setLeads([])
+        setLoading(false)
+        return
       }
+
+      setLeads(data)
+
+      // Fetch stage data for all leads to determine which ones have data
+      const leadsWithStageData = new Set<string>()
+      for (const lead of data) {
+        try {
+          const stageDataRes = await fetchWithAuth(`/api/stage-data?leadId=${lead.id}`)
+          if (stageDataRes.ok) {
+            const stageData = await stageDataRes.json()
+            if (stageData.length > 0) {
+              leadsWithStageData.add(lead.id)
+            }
+          }
+        } catch (error) {
+          console.error(`Error fetching stage data for lead ${lead.id}:`, error)
+        }
+      }
+      setLeadsWithData(leadsWithStageData)
+    } catch (error) {
+      console.error('Error in fetchLeads:', error)
+      setLeads([])
+    } finally {
+      setLoading(false)
     }
-    setLeadsWithData(leadsWithStageData)
-    setLoading(false)
   }
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string)
+    const lead = leads.find(l => l.id === (event.active.id as string))
+    if (lead) setActiveStage(lead.stage)
+  }
+
+  const canMoveToStage = (currentStage: string, newStage: string) => {
+    const isAdmin = user?.role === 'ADMIN'
+    if (isAdmin) return true // Admins can move anywhere
+    
+    // Restrictions for sales reps
+    const currentIndex = stages.indexOf(currentStage)
+    const newIndex = stages.indexOf(newStage)
+    
+    // Allow moving backward to any previous stage, staying in the same stage,
+    // or moving forward to the immediate next stage.
+    return newIndex <= currentIndex + 1
   }
 
   const handleDragOver = (event: DragOverEvent) => {
@@ -164,10 +194,10 @@ export default function PipelinePage() {
 
     if (!activeLead) return
 
-    // If dropping on a column header (stage name)
+    // If dropping on a column header or empty space
     if (stages.includes(overId)) {
       const newStage = overId
-      if (activeLead.stage !== newStage) {
+      if (activeLead.stage !== newStage && canMoveToStage(activeLead.stage, newStage)) {
         setLeads(prev => prev.map(lead =>
           lead.id === activeId ? { ...lead, stage: newStage } : lead
         ))
@@ -176,12 +206,22 @@ export default function PipelinePage() {
     }
 
     // If dropping on another lead
-    if (overLead && activeLead.stage === overLead.stage) {
-      const activeIndex = leads.findIndex(lead => lead.id === activeId)
-      const overIndex = leads.findIndex(lead => lead.id === overId)
+    if (overLead) {
+      if (activeLead.stage !== overLead.stage) {
+        // Moving to a different column by hovering over another lead
+        if (canMoveToStage(activeLead.stage, overLead.stage)) {
+          setLeads(prev => prev.map(lead =>
+            lead.id === activeId ? { ...lead, stage: overLead.stage } : lead
+          ))
+        }
+      } else {
+        // Reordering within the same column
+        const activeIndex = leads.findIndex(lead => lead.id === activeId)
+        const overIndex = leads.findIndex(lead => lead.id === overId)
 
-      if (activeIndex !== overIndex) {
-        setLeads(prev => arrayMove(prev, activeIndex, overIndex))
+        if (activeIndex !== overIndex) {
+          setLeads(prev => arrayMove(prev, activeIndex, overIndex))
+        }
       }
     }
   }
@@ -211,18 +251,15 @@ export default function PipelinePage() {
       }
     }
 
-    if (newStage !== activeLead.stage) {
-      // Update locally
-      setLeads(prev => prev.map(lead =>
-        lead.id === activeId ? { ...lead, stage: newStage } : lead
-      ))
-
+    // Only commit if the move is allowed and the stage actually changed
+    if (activeStage && newStage !== activeStage && canMoveToStage(activeStage, newStage)) {
       // Update on server
       await fetchWithAuth(`/api/leads/${activeId}`, {
         method: 'PUT',
         body: JSON.stringify({ stage: newStage })
       })
     }
+    setActiveStage(null)
   }
 
   const moveToNextStage = async (leadId: string) => {
@@ -420,11 +457,15 @@ export default function PipelinePage() {
   }
 
   const handleIssueInvoice = async (leadId: string) => {
+    const lead = leads.find(l => l.id === leadId)
+    const emailStr = window.prompt("Please enter the client's email address:", lead?.email || '')
+    if (!emailStr) return
+
     setIssuingInvoiceLeadId(leadId)
     try {
       const response = await fetchWithAuth('/api/invoices/issue', {
         method: 'POST',
-        body: JSON.stringify({ leadId })
+        body: JSON.stringify({ leadId, email: emailStr })
       })
 
       const payload = await response.json()
@@ -567,6 +608,7 @@ export default function PipelinePage() {
                               hasStageData={leadsWithData.has(lead.id)}
                               isSelected={selectedLeadIds.has(lead.id)}
                               onToggleSelect={toggleLeadSelection}
+                              isDraggable={true}
                             />
                           ))}
                         </SortableContext>

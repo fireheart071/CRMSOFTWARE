@@ -35,7 +35,12 @@ export default function Dashboard() {
     // Load user from localStorage
     const storedUser = localStorage.getItem('user')
     if (storedUser) {
-      setUser(JSON.parse(storedUser))
+      const parsedUser = JSON.parse(storedUser)
+      if (parsedUser.role !== 'ADMIN') {
+        router.replace('/pipeline')
+        return
+      }
+      setUser(parsedUser)
       fetchDashboardData()
     } else {
       router.replace('/login')
@@ -49,11 +54,11 @@ export default function Dashboard() {
       fetchWithAuth('/api/reminders')
     ])
 
-    const dashboardData = await dashboardRes.json()
+    const dashboardData = dashboardRes.ok ? await dashboardRes.json() : null
     const remindersData = remindersRes.ok ? await remindersRes.json() : []
 
     setData(dashboardData)
-    setReminders(remindersData)
+    setReminders(Array.isArray(remindersData) ? remindersData : [])
     setLoading(false)
   }
 
@@ -67,10 +72,10 @@ export default function Dashboard() {
     CLIENT_RETENTION: 'Client Retention'
   }
 
-  const chartData = data?.pipelineData.map(item => ({
+  const chartData = Array.isArray(data?.pipelineData) ? data.pipelineData.map(item => ({
     stage: stageLabels[item.stage as keyof typeof stageLabels],
     count: item.count
-  })) || []
+  })) : []
 
   const formatReminderDate = (date: string) => {
     return new Date(date).toLocaleDateString()

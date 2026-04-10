@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 
 function getUserIdFromRequest(request: NextRequest): string | null {
   const userId = request.headers.get('X-User-Id')
+  if (!userId || userId === 'undefined' || userId === 'null') return null
   return userId
 }
 
@@ -19,11 +20,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+
     // Verify that the lead belongs to the authenticated user
     const lead = await prisma.lead.findFirst({
-      where: {
+      where: user?.role === 'ADMIN' ? { id: leadId } : {
         id: leadId,
-        createdBy: userId
+        OR: [
+          { createdBy: userId },
+          { assignedTo: userId }
+        ]
       }
     })
 
@@ -96,11 +102,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Lead ID is required' }, { status: 400 })
     }
 
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+
     // Verify that the lead belongs to the authenticated user
     const lead = await prisma.lead.findFirst({
-      where: {
+      where: user?.role === 'ADMIN' ? { id: leadId } : {
         id: leadId,
-        createdBy: userId
+        OR: [
+          { createdBy: userId },
+          { assignedTo: userId }
+        ]
       }
     })
 

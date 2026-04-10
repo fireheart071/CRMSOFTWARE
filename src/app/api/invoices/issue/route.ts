@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { leadId } = await request.json()
+    const { leadId, email } = await request.json()
     if (!leadId) {
       return NextResponse.json({ error: 'leadId is required' }, { status: 400 })
     }
@@ -35,13 +35,19 @@ export async function POST(request: NextRequest) {
     const smtpPort = Number(process.env.SMTP_PORT || 587)
     const smtpUser = process.env.SMTP_USER
     const smtpPass = process.env.SMTP_PASS
-    const fromEmail = process.env.SMTP_FROM || smtpUser
+    const fromEmail = process.env.SMTP_FROM || smtpUser || process.env.GMAIL_USER
 
-    if (!smtpHost || !smtpUser || !smtpPass || !fromEmail) {
+    const gmailUser = process.env.GMAIL_USER
+    const gmailPass = process.env.GMAIL_APP_PASSWORD
+
+    const isGmailConfigured = !!(gmailUser && gmailPass)
+    const isSmtpConfigured = !!(smtpHost && smtpUser && smtpPass)
+
+    if (!isGmailConfigured && !isSmtpConfigured) {
       return NextResponse.json(
         {
           error:
-            'Email is not configured. Please set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, and SMTP_FROM in your environment.'
+            'Email is not configured. Please set GMAIL_USER and GMAIL_APP_PASSWORD (or standard SMTP credentials) in your .env file.'
         },
         { status: 500 }
       )
@@ -68,11 +74,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Lead not found or access denied' }, { status: 404 })
     }
 
-    if (!lead.email) {
+    const clientEmail = email || lead.email
+
+    if (!clientEmail) {
       return NextResponse.json(
         { error: 'Client email is missing. Add an email to this lead before issuing invoice.' },
         { status: 400 }
       )
+    }
+
+    if (email && email !== lead.email) {
+      await prisma.lead.update({
+        where: { id: lead.id },
+        data: { email }
+      })
     }
 
     const paymentData = lead.stageData[0] ? parseJsonData(lead.stageData[0].data) : {}
@@ -107,26 +122,36 @@ export async function POST(request: NextRequest) {
       </div>
     `
 
-    const transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: smtpPort === 465,
-      auth: {
-        user: smtpUser,
-        pass: smtpPass
-      }
-    })
+    const transporter = nodemailer.createTransport(
+      isGmailConfigured
+        ? {
+            service: 'gmail',
+            auth: {
+              user: gmailUser,
+              pass: gmailPass
+            }
+          }
+        : {
+            host: smtpHost,
+            port: smtpPort,
+            secure: smtpPort === 465,
+            auth: {
+              user: smtpUser,
+              pass: smtpPass
+            }
+          }
+    )
 
     await transporter.sendMail({
       from: fromEmail,
-      to: lead.email,
+      to: clientEmail,
       subject,
       html
     })
 
     return NextResponse.json({
       success: true,
-      clientEmail: lead.email,
+      clientEmail: clientEmail,
       invoiceNumber
     })
   } catch (error) {
